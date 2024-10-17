@@ -1,0 +1,98 @@
+USE familytree;
+
+CREATE TABLE users (
+    user_id INT NOT NULL AUTO_INCREMENT,        --  identifier for each user
+    first_name VARCHAR(200),          
+    last_name VARCHAR(200),           
+    email_address VARCHAR(200),        
+    role ENUM('Owner', 'Collaborator', 'Guest'), 
+    PRIMARY KEY(user_id));
+    
+INSERT INTO users (first_name, last_name, email_address, role) 
+VALUES ('John', 'Smith', 'johnsmith@gmail.com', 'Owner');
+INSERT INTO users (first_name, last_name, email_address, role) 
+VALUES ('Phil', 'Dunphy', 'phildunphy@yahoo.com', 'Collaborator');
+INSERT INTO users (first_name, last_name, email_address, role) 
+VALUES ('Gloria', 'Pritchett', 'gloriapritchett1@gmail.com', 'Owner');
+
+CREATE TABLE family_trees (
+    family_tree_id INT AUTO_INCREMENT,      -- identifier for each family tree
+    tree_name VARCHAR(200),          -- Name of family tree
+    user_id INT,                         -- user who owns the family tree
+    PRIMARY KEY (family_tree_id),                    
+    FOREIGN KEY (user_id) REFERENCES users(user_id)  -- linking to the users table
+    ON DELETE CASCADE);                             -- trees are deleted if the user is deleted
+
+INSERT INTO family_trees (tree_name, user_id) 
+VALUES ('Smith Family Tree', 1);
+INSERT INTO family_trees (tree_name, user_id) 
+VALUES ('Dunphy Family Tree', 3);
+INSERT INTO family_trees (tree_name, user_id) 
+VALUES ('Pritchett Family Tree', 2);
+USE familytree;
+CREATE TABLE family_members (
+    member_id INT AUTO_INCREMENT,       -- identifier for each family member
+    user_id INT,                        -- user who owns the family tree
+    tree_id INT,                        -- References the family tree
+    first_name VARCHAR(200),
+    last_name VARCHAR(200),
+    birthdate DATE,
+    deathdate DATE,
+    gender ENUM('Male', 'Female', 'Other'),
+    added_by INT,                       -- who added the family member
+    is_alive BOOLEAN,
+    PRIMARY KEY (member_id),            -- identifier for family members
+    FOREIGN KEY (tree_id) REFERENCES family_trees(family_tree_id) ON DELETE CASCADE,
+    FOREIGN KEY (added_by) REFERENCES users(user_id) ON DELETE SET NULL);
+
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
+VALUES (1, 1, 'John', 'Smith', '1970-05-15', 'Male', 1, TRUE);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
+VALUES (2, 1, 'Jane', 'Doe', '1975-08-20', 'Female', 2, TRUE);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
+VALUES (3, 2, 'Phil', 'Dunphy', '1970-07-02', 'Male', 3, TRUE);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
+VALUES (3, 2, 'Claire', 'Dunphy', '1972-10-15', 'Female', 3, TRUE);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
+VALUES (1, 1, 'John Jr.', 'Smith', '2000-01-01', 'Male', 1, TRUE);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
+VALUES (3, 2, 'Luke', 'Dunphy', '2002-05-12', 'Male', 3, TRUE);
+
+CREATE TABLE relationships (
+    relationship_id INT AUTO_INCREMENT,       -- identifier for each relationship
+    tree_id INT,           -- Family tree ID this relationship belongs to
+    member1_id INT,                                                     
+    member2_id INT,                                                     
+    relationship ENUM('Parent', 'Spouse', 'Sibling', 'Child', 'Other'), 
+    PRIMARY KEY (relationship_id),                                     
+    FOREIGN KEY (tree_id) REFERENCES family_trees(family_tree_id) ON DELETE CASCADE,  -- Foreign key to family_trees
+    FOREIGN KEY (member1_id) REFERENCES family_members(member_id) ON DELETE CASCADE,  -- Foreign key to family_members
+    FOREIGN KEY (member2_id) REFERENCES family_members(member_id) ON DELETE CASCADE);   -- Foreign key to family_members
+
+INSERT INTO relationships (tree_id, member1_id, member2_id, relationship)
+VALUES (1, 1, 5, 'Parent'); 
+INSERT INTO relationships (tree_id, member1_id, member2_id, relationship)
+VALUES (2, 3, 6, 'Parent');  
+-- Spouse relationships
+INSERT INTO relationships (tree_id, member1_id, member2_id, relationship)
+VALUES (1, 1, 2, 'Spouse'); 
+INSERT INTO relationships (tree_id, member1_id, member2_id, relationship)
+VALUES (2, 3, 4, 'Spouse');  
+
+CREATE TABLE attachments (
+    media_id INT AUTO_INCREMENT,      -- identifier for each file
+    member_id INT,                      -- family member the file is attached to
+    type_of_file VARCHAR(200),         -- Type of file ( image, document)
+    uploaded_by INT,                    -- User who uploaded the file
+    PRIMARY KEY (media_id),                              
+    FOREIGN KEY (member_id) REFERENCES family_members(member_id) ON DELETE CASCADE,  -- If family member is deleted, delete attachments
+    FOREIGN KEY (uploaded_by) REFERENCES users(user_id) ON DELETE SET NULL);    -- If the uploader is deleted, set uploaded_by to NULL
+    
+
+INSERT INTO attachments (member_id, type_of_file, uploaded_by) 
+VALUES (1, 'image', 1);
+INSERT INTO attachments (member_id, type_of_file, uploaded_by) 
+VALUES (2, 'document', 2);
+INSERT INTO attachments (member_id, type_of_file, uploaded_by) 
+VALUES (3, 'image', 3);
+SELECT * FROM family_trees;
