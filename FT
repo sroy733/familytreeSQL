@@ -2,34 +2,34 @@ USE familytree;
 
 CREATE TABLE users (
     user_id INT NOT NULL AUTO_INCREMENT,        --  identifier for each user
-    first_name VARCHAR(200),          
-    last_name VARCHAR(200),           
+    name VARCHAR(200),          
     email_address VARCHAR(200),        
-    role ENUM('Owner', 'Collaborator', 'Guest'), 
+    role ENUM('Owner', 'Collaborator', 'Guest') DEFAULT 'Guest', 
     PRIMARY KEY(user_id));
     
-INSERT INTO users (first_name, last_name, email_address, role) 
-VALUES ('John', 'Smith', 'johnsmith@gmail.com', 'Owner');
-INSERT INTO users (first_name, last_name, email_address, role) 
-VALUES ('Phil', 'Dunphy', 'phildunphy@yahoo.com', 'Collaborator');
-INSERT INTO users (first_name, last_name, email_address, role) 
-VALUES ('Gloria', 'Pritchett', 'gloriapritchett1@gmail.com', 'Owner');
+INSERT INTO users (name, email_address, role) 
+VALUES ('John Smith', 'johnsmith@gmail.com', 'Owner');
+INSERT INTO users (name, email_address, role) 
+VALUES ('Phil Dunphy', 'phildunphy@yahoo.com', 'Collaborator');
+INSERT INTO users (name, email_address, role) 
+VALUES ('Gloria Pritchett', 'gloriapritchett1@gmail.com', 'Guest');
 
 CREATE TABLE family_trees (
     family_tree_id INT AUTO_INCREMENT,      -- identifier for each family tree
     tree_name VARCHAR(200),          -- Name of family tree
     user_id INT,                         -- user who owns the family tree
+    privacy_setting ENUM('Public', 'Private') DEFAULT 'Private',
     PRIMARY KEY (family_tree_id),                    
     FOREIGN KEY (user_id) REFERENCES users(user_id)  -- linking to the users table
     ON DELETE CASCADE);                             -- trees are deleted if the user is deleted
 
-INSERT INTO family_trees (tree_name, user_id) 
-VALUES ('Smith Family Tree', 1);
-INSERT INTO family_trees (tree_name, user_id) 
-VALUES ('Dunphy Family Tree', 3);
-INSERT INTO family_trees (tree_name, user_id) 
-VALUES ('Pritchett Family Tree', 2);
-USE familytree;
+INSERT INTO family_trees (tree_name, user_id, privacy_setting) 
+VALUES ('Smith Family Tree', 1, 'Private');
+INSERT INTO family_trees (tree_name, user_id, privacy_setting) 
+VALUES ('Dunphy Family Tree', 3, 'Private');
+INSERT INTO family_trees (tree_name, user_id, privacy_setting) 
+VALUES ('Pritchett Family Tree', 2, 'Private');
+
 CREATE TABLE family_members (
     member_id INT AUTO_INCREMENT,       -- identifier for each family member
     user_id INT,                        -- user who owns the family tree
@@ -40,23 +40,23 @@ CREATE TABLE family_members (
     deathdate DATE,
     gender ENUM('Male', 'Female', 'Other'),
     added_by INT,                       -- who added the family member
-    is_alive BOOLEAN,
+    additional_info VARCHAR(2000) DEFAULT NULL,
     PRIMARY KEY (member_id),            -- identifier for family members
     FOREIGN KEY (tree_id) REFERENCES family_trees(family_tree_id) ON DELETE CASCADE,
     FOREIGN KEY (added_by) REFERENCES users(user_id) ON DELETE SET NULL);
 
-INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
-VALUES (1, 1, 'John', 'Smith', '1970-05-15', 'Male', 1, TRUE);
-INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
-VALUES (2, 1, 'Jane', 'Doe', '1975-08-20', 'Female', 2, TRUE);
-INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
-VALUES (3, 2, 'Phil', 'Dunphy', '1970-07-02', 'Male', 3, TRUE);
-INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
-VALUES (3, 2, 'Claire', 'Dunphy', '1972-10-15', 'Female', 3, TRUE);
-INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
-VALUES (1, 1, 'John Jr.', 'Smith', '2000-01-01', 'Male', 1, TRUE);
-INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, gender, added_by, is_alive)
-VALUES (3, 2, 'Luke', 'Dunphy', '2002-05-12', 'Male', 3, TRUE);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, deathdate, gender, added_by, additional_info)
+VALUES (1, 1, 'John', 'Smith', '1970-05-15', NULL, 'Male', 1, NULL);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, deathdate, gender, added_by, additional_info)
+VALUES (2, 1, 'Jane', 'Doe', '1975-08-20', NULL, 'Female', 2, NULL);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, deathdate, gender, added_by, additional_info)
+VALUES (3, 2, 'Phil', 'Dunphy', '1970-07-02', NULL, 'Male', 3, NULL);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, deathdate, gender, added_by, additional_info)
+VALUES (3, 2, 'Claire', 'Dunphy', '1972-10-15', NULL, 'Female', 3, NULL);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, deathdate, gender, added_by, additional_info)
+VALUES (1, 1, 'John Jr.', 'Smith', '2000-01-01', NULL, 'Male', 1, NULL);
+INSERT INTO family_members (user_id, tree_id, first_name, last_name, birthdate, deathdate, gender, added_by, additional_info)
+VALUES (3, 2, 'Luke', 'Dunphy', '2002-05-12', NULL, 'Male', 3, NULL);
 
 CREATE TABLE relationships (
     relationship_id INT AUTO_INCREMENT,       -- identifier for each relationship
@@ -96,3 +96,22 @@ VALUES (2, 'document', 2);
 INSERT INTO attachments (member_id, type_of_file, uploaded_by) 
 VALUES (3, 'image', 3);
 SELECT * FROM family_trees;
+
+CREATE TABLE collaborations (
+    collaboration_id INT AUTO_INCREMENT,      
+    tree_id INT,                            -- References the family tree
+    user_id INT,                              -- References the user
+    role ENUM('Owner', 'Editor', 'Viewer') DEFAULT 'Viewer', 
+    status ENUM('Accepted', 'Declined', 'Pending') DEFAULT 'Pending',  -- Status of the collaboration
+    PRIMARY KEY (collaboration_id),           -- Primary key
+    FOREIGN KEY (tree_id) REFERENCES family_trees(family_tree_id) ON DELETE CASCADE,  -- Link to family_trees
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE);                 -- Link to users
+
+INSERT INTO collaborations (tree_id, user_id, role, status)
+VALUES (1, 2, 'Editor', 'Pending');
+INSERT INTO collaborations (tree_id, user_id, role, status)
+VALUES (2, 2, 'Viewer', 'Accepted');
+INSERT INTO collaborations (tree_id, user_id, role, status)
+VALUES (1, 3, 'Editor', 'Declined');
+INSERT INTO collaborations (tree_id, user_id, role, status)
+VALUES (1, 2, 'Owner', 'Accepted');
